@@ -4,12 +4,22 @@ WORKDIR /app
 
 COPY package*.json ./
 
+# Install dependencies
 RUN npm install
 
+# Copy application code
 COPY . .
 
+# Copy environment file
 COPY .env-sample .env
+
+# Build the application
+RUN npm run build
+
+# Set production environment
+ENV NODE_ENV=production
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev"] 
+# Run in production mode
+CMD ["npm", "run", "start"] 
