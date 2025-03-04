@@ -10,9 +10,6 @@ RUN npm install
 # Copy application code
 COPY . .
 
-# Copy environment file
-COPY .env-sample .env
-
 # Build the application
 RUN npm run build
 
