@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎨 Bitcoin Map Frontend
 
-## Getting Started
+[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/) [![React](https://img.shields.io/badge/React-19-blue)](https://reactjs.org/) [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-38B2AC)](https://tailwindcss.com/)
 
-First, run the development server:
+Frontend application for Bitcoin Map that displays an interactive map of Bitcoin-accepting locations.
+
+## 🚀 Getting Started
+
+### 💻 Development Mode
 
 ```bash
+# Install dependencies
+npm install
+
+# Copy environment variables file
+cp .env-sample .env
+
+# Start the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The development server will run at http://localhost:3000 with hot-reloading enabled.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 🏭 Production Mode
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+# Install dependencies
+npm install
 
-## Learn More
+# Copy environment variables file
+cp .env-sample .env
 
-To learn more about Next.js, take a look at the following resources:
+# Build the application
+npm run build
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Start the production server
+npm run start
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The production server will run at http://localhost:3000.
 
-## Deploy on Vercel
+## 🧩 Environment Variables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The application requires environment variables for configuration. Copy the sample file and adjust as needed:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+cp .env-sample .env
+```
+
+Key variables:
+
+- `NEXT_PUBLIC_API_URL`: The URL of the backend API
+
+## 🛠️ Technologies Used
+
+- **Next.js**: React framework for server-rendered applications
+- **React**: JavaScript library for building user interfaces
+- **Leaflet**: Interactive map library
+- **React-Leaflet**: React components for Leaflet maps
+- **Tailwind CSS**: Utility-first CSS framework
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request for bug fixes, new features, or improvements.
