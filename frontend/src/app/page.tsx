@@ -48,9 +48,6 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Use cached state to prevent unnecessary renders
-  const [dataFetchAttempts, setDataFetchAttempts] = useState(0);
-
   // Memoized fetch function to prevent unnecessary recreations
   const loadData = useCallback(async (isRefreshRequest = false) => {
     try {
@@ -104,7 +101,7 @@ export default function Home() {
 
   useEffect(() => {
     loadData();
-  }, [loadData, dataFetchAttempts]);
+  }, [loadData]);
 
   const handleRefresh = useCallback(() => {
     if (isRefreshing) return;
