@@ -5,9 +5,8 @@
 A web application that displays Bitcoin-accepting locations on an interactive map, making it easier for users to find and support businesses that accept Bitcoin.
 
 <div align="center">
-  <video width="100%" max-width="800px" autoplay loop muted playsinline>
-    <source src="./demo.mp4" type="video/mp4">
-  </video>
+  
+  https://github.com/user-attachments/assets/db6d6971-6577-47c4-b9d8-a9e80b901a93
   
   *Quick demo of Bitcoin Map in action*
 </div>
