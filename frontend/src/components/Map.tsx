@@ -19,7 +19,7 @@ declare module "leaflet" {
   }
 
   export interface MarkerClusterGroup extends L.FeatureGroup {
-    constructor(options?: MarkerClusterGroupOptions);
+    constructor(options?: MarkerClusterGroupOptions): this;
     addLayer(layer: L.Layer): this;
     getBounds(): L.LatLngBounds;
   }
