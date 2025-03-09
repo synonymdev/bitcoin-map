@@ -26,3 +26,6 @@ yarn-error.log*
 Thumbs.db 
 *.db
 *.db-journal
+
+# Coverage directory used by tools like istanbul
+coverage/
