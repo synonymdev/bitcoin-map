@@ -526,6 +526,303 @@ function getIconByPaymentMethods(tags: Record<string, string>) {
   return bitcoinIcon; // Always return the same icon
 }
 
+// Location Button Component
+function LocationButton() {
+  const map = useMap();
+  const [loading, setLoading] = useState(false);
+
+  const handleGetLocation = () => {
+    setLoading(true);
+    
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          
+          // Fly to user location without adding a marker
+          map.flyTo([latitude, longitude], 12, {
+            animate: true,
+            duration: 1.5
+          });
+          
+          setLoading(false);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          
+          // Show error message based on error code
+          let errorMessage = "Failed to get your location.";
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = "Location access denied. Please enable location services in your browser settings.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = "Location information is unavailable.";
+              break;
+            case error.TIMEOUT:
+              errorMessage = "Location request timed out.";
+              break;
+          }
+          
+          // Create a popup with the error message
+          L.popup()
+            .setLatLng(map.getCenter())
+            .setContent(`<div style="color: #ff5555; font-weight: bold;">${errorMessage}</div>`)
+            .openOn(map);
+          
+          setLoading(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    } else {
+      // Browser doesn't support geolocation
+      L.popup()
+        .setLatLng(map.getCenter())
+        .setContent("<div style='color: #ff5555; font-weight: bold;'>Geolocation is not supported by your browser.</div>")
+        .openOn(map);
+      
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="leaflet-top leaflet-right" style={{ marginTop: "10px" }}>
+      <div className="leaflet-control">
+        <button
+          onClick={handleGetLocation}
+          disabled={loading}
+          title="Zoom to my location"
+          aria-label="Zoom to my location"
+          className="location-button"
+          style={{
+            width: "50px",
+            height: "50px",
+            backgroundColor: "#282a36",
+            border: "none",
+            borderRadius: "50%",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 1px 15px rgba(0,0,0,0.25)",
+            color: loading ? "#6272a4" : "#f8f8f2",
+          }}
+        >
+          {loading ? (
+            <div className="spinner" style={{ width: "22px", height: "22px", borderRadius: "50%", border: "2px solid #6272a4", borderTopColor: "transparent", animation: "spin 1s linear infinite" }} />
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Add custom CSS for the location button
+const addCustomStyles = () => {
+  if (typeof document !== 'undefined' && !document.getElementById('map-custom-styles')) {
+    const style = document.createElement('style');
+    style.id = 'map-custom-styles';
+    style.innerHTML = `
+      /* Cluster styles */
+      .custom-cluster-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .cluster-inner {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 14px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+      }
+      
+      .cluster-small .cluster-inner {
+        background-color: rgba(247, 147, 26, 0.7);
+        border: 2px solid rgba(255, 255, 255, 0.5);
+      }
+      
+      .cluster-medium .cluster-inner {
+        background-color: rgba(247, 147, 26, 0.85);
+        border: 2px solid rgba(255, 255, 255, 0.6);
+      }
+      
+      .cluster-large .cluster-inner {
+        background-color: rgba(247, 147, 26, 0.95);
+        border: 2px solid rgba(255, 215, 0, 0.6);
+      }
+      
+      .cluster-xlarge .cluster-inner {
+        background-color: rgba(255, 165, 0, 0.95);
+        border: 2px solid rgba(255, 215, 0, 0.8);
+      }
+      
+      /* Popup styles */
+      .leaflet-popup {
+        z-index: 1000 !important;
+      }
+      
+      .leaflet-popup-content-wrapper {
+        background-color: #1e1e2e;
+        color: #f8f8f2;
+        border-radius: 8px;
+        box-shadow: 0 3px 14px rgba(0, 0, 0, 0.4);
+      }
+      
+      .leaflet-popup-tip {
+        background-color: #1e1e2e;
+      }
+      
+      .leaflet-popup-content {
+        margin: 0;
+        min-width: 280px;
+        max-width: 320px;
+      }
+      
+      .popup-content {
+        padding: 16px;
+      }
+      
+      .popup-content h3 {
+        margin: 0 0 8px 0;
+        font-size: 18px;
+        font-weight: bold;
+        color: #f8f8f2;
+      }
+      
+      .popup-content p {
+        margin: 0 0 8px 0;
+        font-size: 13px;
+        line-height: 1.4;
+        color: rgba(248, 248, 242, 0.8);
+      }
+      
+      .popup-content .tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 10px;
+      }
+      
+      .popup-content .tag {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+      
+      .popup-content .tag.bitcoin {
+        background-color: rgba(247, 147, 26, 0.2);
+        color: #F7931A;
+      }
+      
+      .popup-content .tag.lightning {
+        background-color: rgba(121, 46, 229, 0.2);
+        color: #792EE5;
+      }
+      
+      .popup-content .tag.amenity {
+        background-color: rgba(248, 248, 242, 0.1);
+        color: rgba(248, 248, 242, 0.8);
+      }
+      
+      .popup-content .tag.type {
+        background-color: rgba(73, 80, 87, 0.2);
+        color: #e9ecef;
+        margin-top: 4px;
+        display: inline-block;
+      }
+      
+      .popup-content .section {
+        margin-bottom: 12px;
+        padding-bottom: 12px;
+      }
+      
+      .popup-content .section:not(:last-child) {
+        border-bottom: 1px solid rgba(248, 248, 242, 0.1);
+      }
+      
+      .popup-content .detail-row {
+        display: flex;
+        margin-bottom: 8px;
+        align-items: flex-start;
+      }
+      
+      .popup-content .detail-label {
+        font-weight: 600;
+        margin-right: 8px;
+        min-width: 70px;
+        color: #f8f8f2;
+        background-color: rgba(248, 248, 242, 0.1);
+        padding: 3px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+        text-align: center;
+      }
+      
+      .popup-content .detail-value {
+        flex: 1;
+        word-break: break-word;
+        font-size: 13px;
+        color: rgba(248, 248, 242, 0.9);
+      }
+      
+      .popup-content a {
+        color: #00B1EA;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        word-break: break-all;
+        display: inline-block;
+      }
+      
+      .popup-content a:hover {
+        color: #4CC9F0;
+        text-decoration: underline;
+      }
+      
+      .popup-content .footer {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(248, 248, 242, 0.1);
+        font-size: 11px;
+        color: rgba(248, 248, 242, 0.5);
+      }
+      
+      .popup-content .section.no-border {
+        border-bottom: none;
+      }
+      
+      /* Location button styles */
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      
+      .location-button:hover {
+        background-color: #44475a !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+};
+
 export default function Map({ coordinates }: MapProps) {
   return (
     <div style={{ width: "100%", height: "100%" }}>
@@ -548,6 +845,7 @@ export default function Map({ coordinates }: MapProps) {
           maxZoom={19}
         />
         <MarkerLayer coordinates={coordinates} />
+        <LocationButton />
       </MapContainer>
     </div>
   );
