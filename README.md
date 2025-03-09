@@ -1,6 +1,6 @@
 # 🗺️ Bitcoin Map
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/) [![Node.js](https://img.shields.io/badge/Node.js-18.x-green)](https://nodejs.org/) [![Docker](https://img.shields.io/badge/Docker-Ready-blue)](#-running-with-docker-compose) [![Bitcoin](https://img.shields.io/badge/Bitcoin-Accepted-orange)](https://bitcoin.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/) [![Node.js](https://img.shields.io/badge/Node.js-18.x-green)](https://nodejs.org/) [![Docker](https://img.shields.io/badge/Docker-Ready-blue)](#-running-with-docker-compose) [![Bitcoin](https://img.shields.io/badge/Bitcoin-Accepted-orange)](https://bitcoin.org/) [![Tests](https://github.com/synonymdev/bitcoin-map/actions/workflows/test.yml/badge.svg)](https://github.com/synonymdev/bitcoin-map/actions/workflows/test.yml)
 
 A web application that displays Bitcoin-accepting locations on an interactive map, making it easier for users to find and support businesses that accept Bitcoin.
 
