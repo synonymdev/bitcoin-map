@@ -1,6 +1,6 @@
 # ⚙️ Bitcoin Map Backend
 
-[![Node.js](https://img.shields.io/badge/Node.js-18.x-green)](https://nodejs.org/) [![Express](https://img.shields.io/badge/Express-4.x-lightgrey)](https://expressjs.com/) [![SQLite](https://img.shields.io/badge/SQLite-3-blue)](https://www.sqlite.org/) [![Jest](https://img.shields.io/badge/Jest-29.x-red)](https://jestjs.io/)
+[![Node.js](https://img.shields.io/badge/Node.js-18.x-green)](https://nodejs.org/) [![Express](https://img.shields.io/badge/Express-4.x-lightgrey)](https://expressjs.com/) [![SQLite](https://img.shields.io/badge/SQLite-3-blue)](https://www.sqlite.org/) [![Jest](https://img.shields.io/badge/Jest-29.x-red)](https://jestjs.io/) [![Tests](https://github.com/synonymdev/bitcoin-map/actions/workflows/test.yml/badge.svg)](https://github.com/synonymdev/bitcoin-map/actions/workflows/test.yml)
 
 Backend service for the Bitcoin Map application that provides APIs for Bitcoin-accepting locations.
 
@@ -49,6 +49,17 @@ npm run test:coverage
 ```
 
 The test coverage report will be generated in the `coverage/` directory.
+
+### 🔄 Continuous Integration
+
+Tests are automatically run on each pull request and push to the main branch using GitHub Actions. The workflow:
+
+1. Runs all tests
+2. Generates a coverage report
+3. Checks if coverage is above the threshold (75%)
+4. Comments on the PR with the coverage report
+
+This ensures that all code changes maintain quality and don't break existing functionality.
 
 For more details about the testing approach and structure, see the [tests README](./src/__tests__/README.md).
 

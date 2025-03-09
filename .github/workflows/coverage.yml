@@ -1,0 +1,57 @@
+name: Code Coverage
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  coverage:
+    name: Check Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: 'npm'
+        cache-dependency-path: './backend/package-lock.json'
+        
+    - name: Install backend dependencies
+      run: npm ci
+      working-directory: ./backend
+      
+    - name: Generate backend coverage report
+      run: npm run test:coverage
+      working-directory: ./backend
+      
+    - name: Check backend coverage threshold
+      run: |
+        COVERAGE=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+        echo "Backend coverage: $COVERAGE%"
+        if (( $(echo "$COVERAGE < 75" | bc -l) )); then
+          echo "::warning::Backend coverage is below 75%: $COVERAGE%"
+        fi
+      working-directory: ./backend
+      
+    - name: Comment PR with coverage
+      uses: marocchino/sticky-pull-request-comment@v2
+      if: github.event_name == 'pull_request'
+      with:
+        header: backend-coverage
+        message: |
+          ## Backend Test Coverage Report
+          
+          $(cat backend/coverage/coverage-summary.json | jq -r '"Total Coverage: " + (.total.lines.pct | tostring) + "%\n\nFile Coverage:\n" + (.files | to_entries | map(.key + ": " + (.value.lines.pct | tostring) + "%") | join("\n"))')
+          
+          <details>
+          <summary>Coverage Details</summary>
+          
+          ```
+          $(cat backend/coverage/lcov-report/index.html | grep -A 100 "<div class='fl pad1y space-right2'>" | head -20)
+          ```
+          
+          </details>
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
