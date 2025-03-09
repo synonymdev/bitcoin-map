@@ -12,6 +12,7 @@ import {
   FaSpinner,
   FaStore,
 } from "react-icons/fa";
+import NumberFlow from "@number-flow/react";
 
 // Reusable loading placeholder component
 const LoadingPlaceholder = ({ message = "Loading..." }) => (
@@ -41,16 +42,86 @@ const Map = dynamic(() => import("../components/Map"), {
   loading: () => <LoadingPlaceholder message="Loading map component..." />,
 });
 
+// NumberFlow component with custom styling
+interface AnimatedNumberProps {
+  value: number;
+  className?: string;
+  isLoading: boolean;
+}
+
+// Loading spinner component
+const LoadingSpinner = ({ className }: { className?: string }) => (
+  <div className={`${className || ""} flex items-center justify-center h-full w-full`}>
+    <div className="flex items-left space-x-2 mt-[5px] -ml-[20px] h-[20px] min-w-[80px]">
+      <div className="h-[10px] w-[10px] bg-[#f3b467] rounded-full animate-pulse"></div>
+      <div className="h-[10px] w-[10px] bg-[#f3b467] rounded-full animate-pulse delay-75"></div>
+      <div className="h-[10px] w-[10px] bg-[#f3b467] rounded-full animate-pulse delay-150"></div>
+    </div>
+  </div>
+);
+
+const AnimatedNumber = ({ 
+  value, 
+  className = "text-xl font-bold text-[#f8f8f2] tabular-nums tracking-tight",
+  isLoading
+}: AnimatedNumberProps) => {
+  if (isLoading) {
+    return <LoadingSpinner className={className} />;
+  }
+  
+  return (
+    <NumberFlow
+      value={value}
+      format={{ useGrouping: true }}
+      className={className}
+      transformTiming={{ duration: 1500, easing: 'ease-out' }}
+    />
+  );
+};
+
+// Add custom CSS for the loading animation
+const addCustomStyles = () => {
+  if (typeof document !== 'undefined' && !document.getElementById('number-flow-custom-styles')) {
+    const style = document.createElement('style');
+    style.id = 'number-flow-custom-styles';
+    style.innerHTML = `
+      .delay-75 {
+        animation-delay: 0.3s;
+      }
+      .delay-150 {
+        animation-delay: 0.6s;
+      }
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+      .animate-pulse {
+        animation: pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+};
+
 export default function Home() {
   const [coordinates, setCoordinates] = useState<LocationCoordinate[]>([]);
   const [stats, setStats] = useState<LocationStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
 
   // Memoized fetch function to prevent unnecessary recreations
   const loadData = useCallback(async (isRefreshRequest = false) => {
     try {
+      setIsLoadingStats(true);
+      
       if (isRefreshRequest) {
         setIsRefreshing(true);
       } else {
@@ -67,6 +138,10 @@ export default function Home() {
           await forceRefresh();
         setCoordinates(freshCoordinates);
         setStats(freshStats);
+        
+        setTimeout(() => {
+          setIsLoadingStats(false);
+        }, 1000);
       } else {
         let retries = 0;
         let coordinatesData: LocationCoordinate[] = [];
@@ -87,12 +162,17 @@ export default function Home() {
         const statsData = await fetchStats();
         console.log("Stats fetch complete");
         setStats(statsData);
+        
+        setTimeout(() => {
+          setIsLoadingStats(false);
+        }, 1000);
       }
     } catch (error) {
       console.error("Failed to load data:", error);
       setError(
         error instanceof Error ? error.message : "Unknown error occurred"
       );
+      setIsLoadingStats(false);
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -100,11 +180,18 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    setIsLoadingStats(true);
+    
+    addCustomStyles();
+    
     loadData();
   }, [loadData]);
 
   const handleRefresh = useCallback(() => {
     if (isRefreshing) return;
+    
+    setIsLoadingStats(true);
+    
     loadData(true);
   }, [loadData, isRefreshing]);
 
@@ -150,7 +237,7 @@ export default function Home() {
   return (
     <div className="w-screen h-screen flex flex-col">
       {/* Header Stats Bar */}
-      <div className="bg-[#282a36]">
+      <div className="bg-[#282a36] relative z-10">
         <div className="pl-[40px] pr-[40px]">
           <div className="flex items-center justify-between gap-6">
             {/* Logo and Title */}
@@ -166,46 +253,42 @@ export default function Home() {
               <div className="flex items-center gap-4">
                 {/* Total Locations */}
                 <div className="flex items-center p-[20px] group">
-                  <div className="flex items-center gap-3 cursor-help">
-                    <FaStore className="text-[#44475a] group-hover:text-[#bd93f9] transition-colors text-[28px] mr-[10px]" />
-                    <div>
-                      <div className="text-[11px] uppercase tracking-wider font-medium text-[#6272a4] mb-[3px]">
-                        Total Merchants
-                      </div>
-                      <div className="text-xl font-bold text-[#f8f8f2] tabular-nums tracking-tight">
-                        {stats.total_locations.toLocaleString()}
-                      </div>
+                  <div className="flex flex-col items-start">
+                    <div className="text-[11px] uppercase tracking-wider font-medium text-[#6272a4] mb-[3px]">
+                      Total Merchants
                     </div>
+                    <AnimatedNumber 
+                      value={stats.total_locations} 
+                      isLoading={isLoadingStats}
+                    />
                   </div>
                 </div>
 
                 {/* Physical Stores */}
                 <div className="flex items-center p-[20px] group">
-                  <div className="flex items-center gap-3 cursor-help">
-                    <FaShoppingBag className="text-[#44475a] group-hover:text-[#ff79c6] transition-colors text-[28px] mr-[10px]" />
-                    <div>
-                      <div className="text-[11px] uppercase tracking-wider font-medium text-[#6272a4] mb-[3px]">
-                        Physical Stores
-                      </div>
-                      <div className="text-lg font-bold text-white tabular-nums">
-                        {stats.location_types.physical_locations.toLocaleString()}
-                      </div>
+                  <div className="flex flex-col items-start">
+                    <div className="text-[11px] uppercase tracking-wider font-medium text-[#6272a4] mb-[3px]">
+                      Physical Stores
                     </div>
+                    <AnimatedNumber 
+                      value={stats.location_types.physical_locations} 
+                      className="text-lg font-bold text-white tabular-nums"
+                      isLoading={isLoadingStats}
+                    />
                   </div>
                 </div>
 
                 {/* Areas & Buildings */}
                 <div className="flex items-center p-[20px] group">
-                  <div className="flex items-center gap-3 cursor-help">
-                    <FaBuilding className="text-[#44475a] group-hover:text-[#8be9fd] transition-colors text-[28px] mr-[10px]" />
-                    <div>
-                      <div className="text-[11px] uppercase tracking-wider font-medium text-[#6272a4] mb-[3px]">
-                        Areas & Buildings
-                      </div>
-                      <div className="text-lg font-bold text-white tabular-nums">
-                        {stats.location_types.areas_or_buildings.toLocaleString()}
-                      </div>
+                  <div className="flex flex-col items-start">
+                    <div className="text-[11px] uppercase tracking-wider font-medium text-[#6272a4] mb-[3px]">
+                      Areas & Buildings
                     </div>
+                    <AnimatedNumber 
+                      value={stats.location_types.areas_or_buildings} 
+                      className="text-lg font-bold text-white tabular-nums"
+                      isLoading={isLoadingStats}
+                    />
                   </div>
                 </div>
 
@@ -241,7 +324,7 @@ export default function Home() {
       </div>
 
       {/* Map Container */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative z-0">
         <Suspense fallback={<LoadingPlaceholder message="Loading map..." />}>
           <Map coordinates={coordinates} />
         </Suspense>
