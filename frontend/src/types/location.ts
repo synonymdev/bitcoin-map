@@ -7,6 +7,13 @@ export interface BitcoinLocation {
   source: string;
 }
 
+export interface LocationCoordinate {
+  id: number;
+  type: string;
+  lat: number;
+  lon: number;
+}
+
 export interface LocationStats {
   total_locations: number;
   location_types: {

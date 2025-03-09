@@ -2,6 +2,8 @@ import sqlite3 from "sqlite3";
 import { Database } from "sqlite3";
 import { OverpassElement } from "../types/overpass";
 import { OSMRecord, OSMNode, OSMWay, OSMRelation } from "../types/osm";
+import path from 'path';
+import fs from 'fs';
 
 export interface PaymentStats {
   total_locations: number;
@@ -14,11 +16,46 @@ export interface PaymentStats {
   };
 }
 
+interface LocationRow {
+  id: number;
+  type: string;
+  lat: number;
+  lon: number;
+  tags: string;
+  source: string;
+}
+
+export interface Location {
+  id: number;
+  type: string;
+  lat: number;
+  lon: number;
+  tags: Record<string, any>;
+  source: string;
+}
+
+export interface LocationCoordinate {
+  id: number;
+  type: string;
+  lat: number;
+  lon: number;
+}
+
 export class DatabaseService {
-  private db: Database;
+  private db: sqlite3.Database;
+  private dbPath: string;
 
   constructor() {
-    this.db = new sqlite3.Database("bitcoin_locations.db");
+    // Ensure data directory exists
+    const dataDir = path.resolve(__dirname, '../../data');
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    
+    this.dbPath = path.resolve(dataDir, 'bitcoin_locations.db');
+    console.log(`Database path: ${this.dbPath}`);
+    
+    this.db = new sqlite3.Database(this.dbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE);
     this.initializeDatabase();
   }
 
@@ -29,14 +66,154 @@ export class DatabaseService {
         CREATE TABLE IF NOT EXISTS locations (
           id INTEGER PRIMARY KEY,
           type TEXT NOT NULL,
-          lat REAL,
-          lon REAL,
-          tags TEXT,
+          lat REAL NOT NULL,
+          lon REAL NOT NULL,
+          tags TEXT NOT NULL,
           nodes TEXT,
           source TEXT NOT NULL,
-          last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
+    });
+  }
+
+  async getAllLocations(): Promise<Location[]> {
+    return new Promise((resolve, reject) => {
+      this.db.all<LocationRow>(
+        'SELECT id, type, lat, lon, tags, source FROM locations',
+        (err, rows) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          const locations = rows.map((row) => ({
+            id: row.id,
+            type: row.type,
+            lat: row.lat,
+            lon: row.lon,
+            tags: JSON.parse(row.tags),
+            source: row.source,
+          }));
+
+          resolve(locations);
+        }
+      );
+    });
+  }
+
+  async getLocationCoordinates(): Promise<LocationCoordinate[]> {
+    return new Promise((resolve, reject) => {
+      this.db.all<LocationRow>(
+        'SELECT id, type, lat, lon FROM locations',
+        (err, rows) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          resolve(rows.map(row => ({
+            id: row.id,
+            type: row.type,
+            lat: row.lat,
+            lon: row.lon
+          })));
+        }
+      );
+    });
+  }
+
+  async getLocationById(id: string): Promise<Location | null> {
+    return new Promise((resolve, reject) => {
+      this.db.get<LocationRow>(
+        'SELECT id, type, lat, lon, tags, source FROM locations WHERE id = ?',
+        [parseInt(id, 10)],
+        (err, row) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          if (!row) {
+            resolve(null);
+            return;
+          }
+
+          resolve({
+            id: row.id,
+            type: row.type,
+            lat: row.lat,
+            lon: row.lon,
+            tags: JSON.parse(row.tags),
+            source: row.source,
+          });
+        }
+      );
+    });
+  }
+
+  async getPaymentStats(): Promise<PaymentStats> {
+    const stats = await this.getLocationStats();
+    const countries = await this.getCountryStats();
+
+    return {
+      total_locations: stats.total_locations,
+      by_type: {
+        nodes: stats.nodes,
+        ways: stats.ways,
+      },
+      countries,
+    };
+  }
+
+  private async getLocationStats(): Promise<{ total_locations: number; nodes: number; ways: number }> {
+    return new Promise((resolve, reject) => {
+      this.db.get(
+        `SELECT 
+          COUNT(*) as total_locations,
+          SUM(CASE WHEN type = 'node' THEN 1 ELSE 0 END) as nodes,
+          SUM(CASE WHEN type = 'way' THEN 1 ELSE 0 END) as ways
+        FROM locations`,
+        (err, row: { total_locations: number; nodes: number; ways: number } | undefined) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          resolve({
+            total_locations: row?.total_locations || 0,
+            nodes: row?.nodes || 0,
+            ways: row?.ways || 0,
+          });
+        }
+      );
+    });
+  }
+
+  private async getCountryStats(): Promise<{ [country: string]: number }> {
+    return new Promise((resolve, reject) => {
+      this.db.all(
+        `SELECT 
+          json_extract(tags, '$.addr:country') as country,
+          COUNT(*) as count
+        FROM locations
+        WHERE json_extract(tags, '$.addr:country') IS NOT NULL
+        GROUP BY country
+        ORDER BY count DESC`,
+        (err, rows: { country: string; count: number }[]) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          const countries: { [country: string]: number } = {};
+          rows.forEach((row) => {
+            countries[row.country] = row.count;
+          });
+
+          resolve(countries);
+        }
+      );
     });
   }
 
@@ -110,7 +287,7 @@ export class DatabaseService {
 
     return new Promise((resolve, reject) => {
       this.db.run(
-        `INSERT INTO locations (id, type, lat, lon, tags, nodes, source, last_updated)
+        `INSERT INTO locations (id, type, lat, lon, tags, nodes, source, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
          ON CONFLICT(id) DO UPDATE SET
          type = ?,
@@ -119,7 +296,7 @@ export class DatabaseService {
          tags = ?,
          nodes = ?,
          source = ?,
-         last_updated = CURRENT_TIMESTAMP`,
+         updated_at = CURRENT_TIMESTAMP`,
         [
           id,
           type,
@@ -138,83 +315,6 @@ export class DatabaseService {
         (err: Error | null) => {
           if (err) reject(err);
           else resolve();
-        }
-      );
-    });
-  }
-
-  async getAllLocations(): Promise<any[]> {
-    return new Promise<any[]>((resolve, reject) => {
-      this.db.all(
-        "SELECT * FROM locations WHERE lat IS NOT NULL AND lon IS NOT NULL",
-        (err: Error | null, rows: any[]) => {
-          if (err) reject(err);
-          else {
-            // Transform the rows to match the frontend's BitcoinLocation interface
-            const locations = rows.map((row) => ({
-              id: row.id,
-              type: row.type,
-              lat: row.lat,
-              lon: row.lon,
-              tags: row.tags ? JSON.parse(row.tags) : {},
-              nodes: row.nodes ? JSON.parse(row.nodes) : [],
-              source: row.source,
-            }));
-            resolve(locations);
-          }
-        }
-      );
-    });
-  }
-
-  async getPaymentStats(): Promise<PaymentStats> {
-    return new Promise<PaymentStats>((resolve, reject) => {
-      this.db.all(
-        `SELECT 
-          COUNT(*) as total_locations,
-          SUM(CASE WHEN type = 'node' THEN 1 ELSE 0 END) as nodes,
-          SUM(CASE WHEN type = 'way' THEN 1 ELSE 0 END) as ways
-        FROM locations`,
-        async (err: Error | null, [stats]: any[]) => {
-          if (err) reject(err);
-          else {
-            // Get country statistics
-            const countries = await this.getCountryStats();
-            resolve({
-              total_locations: stats.total_locations,
-              by_type: {
-                nodes: stats.nodes,
-                ways: stats.ways,
-              },
-              countries,
-            });
-          }
-        }
-      );
-    });
-  }
-
-  private async getCountryStats(): Promise<Record<string, number>> {
-    return new Promise((resolve, reject) => {
-      this.db.all(
-        `SELECT 
-          json_extract(tags, '$.addr:country') as country,
-          COUNT(*) as count
-        FROM locations
-        WHERE json_extract(tags, '$.addr:country') IS NOT NULL
-        GROUP BY json_extract(tags, '$.addr:country')
-        ORDER BY count DESC`,
-        (err: Error | null, rows: any[]) => {
-          if (err) reject(err);
-          else {
-            const countries: Record<string, number> = {};
-            rows.forEach((row) => {
-              if (row.country) {
-                countries[row.country] = row.count;
-              }
-            });
-            resolve(countries);
-          }
         }
       );
     });

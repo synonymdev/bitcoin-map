@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState, useCallback, Suspense } from "react";
 import dynamic from "next/dynamic";
-import { fetchLocations, fetchStats, forceRefresh } from "../services/api";
-import { BitcoinLocation, LocationStats } from "../types/location";
+import { fetchCoordinates, fetchStats, forceRefresh } from "../services/api";
+import { LocationCoordinate, LocationStats } from "../types/location";
 import {
   FaBitcoin,
   FaBuilding,
@@ -42,7 +42,7 @@ const Map = dynamic(() => import("../components/Map"), {
 });
 
 export default function Home() {
-  const [locations, setLocations] = useState<BitcoinLocation[]>([]);
+  const [coordinates, setCoordinates] = useState<LocationCoordinate[]>([]);
   const [stats, setStats] = useState<LocationStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,26 +63,26 @@ export default function Home() {
       );
 
       if (isRefreshRequest) {
-        const { locations: freshLocations, stats: freshStats } =
+        const { coordinates: freshCoordinates, stats: freshStats } =
           await forceRefresh();
-        setLocations(freshLocations);
+        setCoordinates(freshCoordinates);
         setStats(freshStats);
       } else {
         let retries = 0;
-        let locationsData: BitcoinLocation[] = [];
+        let coordinatesData: LocationCoordinate[] = [];
         while (retries < 3) {
           try {
-            locationsData = await fetchLocations();
+            coordinatesData = await fetchCoordinates();
             break;
           } catch (error) {
             retries++;
             if (retries >= 3) throw error;
-            console.log(`Retrying locations fetch (${retries}/3)...`);
+            console.log(`Retrying coordinates fetch (${retries}/3)...`);
             await new Promise((resolve) => setTimeout(resolve, 1000));
           }
         }
-        console.log("Locations fetch complete");
-        setLocations(locationsData);
+        console.log("Coordinates fetch complete");
+        setCoordinates(coordinatesData);
         console.log("Starting stats fetch...");
         const statsData = await fetchStats();
         console.log("Stats fetch complete");
@@ -243,7 +243,7 @@ export default function Home() {
       {/* Map Container */}
       <div className="flex-1 relative">
         <Suspense fallback={<LoadingPlaceholder message="Loading map..." />}>
-          <Map locations={locations} />
+          <Map coordinates={coordinates} />
         </Suspense>
       </div>
     </div>

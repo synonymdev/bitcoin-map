@@ -1,3 +1,7 @@
+import { DatabaseService } from '../services/database';
+import { OverpassService } from '../services/overpass';
+import * as btcmapService from '../services/btcmap';
+
 // Mocks
 jest.mock('express', () => {
   const mockGet = jest.fn();
@@ -14,6 +18,7 @@ jest.mock('express', () => {
   };
   
   const mockExpress = jest.fn(() => mockApp);
+  // Adding json property as any to avoid type error
   (mockExpress as any).json = jest.fn();
   
   return mockExpress;
@@ -39,9 +44,36 @@ jest.mock('../services/database', () => {
   return {
     DatabaseService: jest.fn().mockImplementation(() => ({
       getAllLocations: jest.fn().mockResolvedValue([
+        { id: 1, type: 'node', lat: 40.7128, lon: -74.0060, tags: { name: 'Location 1' }, source: 'overpass' },
+        { id: 2, type: 'way', lat: 34.0522, lon: -118.2437, tags: { name: 'Location 2' }, source: 'btcmap' }
+      ]),
+      getLocationCoordinates: jest.fn().mockResolvedValue([
         { id: 1, type: 'node', lat: 40.7128, lon: -74.0060 },
         { id: 2, type: 'way', lat: 34.0522, lon: -118.2437 }
       ]),
+      getLocationById: jest.fn().mockImplementation((id) => {
+        if (id === '1') {
+          return Promise.resolve({ 
+            id: 1, 
+            type: 'node', 
+            lat: 40.7128, 
+            lon: -74.0060, 
+            tags: { name: 'Location 1', amenity: 'cafe' }, 
+            source: 'overpass' 
+          });
+        } else if (id === '2') {
+          return Promise.resolve({ 
+            id: 2, 
+            type: 'way', 
+            lat: 34.0522, 
+            lon: -118.2437, 
+            tags: { name: 'Location 2', shop: 'supermarket' }, 
+            source: 'btcmap' 
+          });
+        } else {
+          return Promise.resolve(null);
+        }
+      }),
       getPaymentStats: jest.fn().mockResolvedValue({
         total_locations: 10,
         by_type: { nodes: 7, ways: 3 },
@@ -100,6 +132,8 @@ describe('Server', () => {
     // Verify that endpoints were configured
     expect(app.get).toHaveBeenCalledWith('/health', expect.any(Function));
     expect(app.get).toHaveBeenCalledWith('/api/locations', expect.any(Function));
+    expect(app.get).toHaveBeenCalledWith('/api/coordinates', expect.any(Function));
+    expect(app.get).toHaveBeenCalledWith('/api/locations/:id', expect.any(Function));
     expect(app.get).toHaveBeenCalledWith('/api/stats', expect.any(Function));
     
     // Verify that the server was started

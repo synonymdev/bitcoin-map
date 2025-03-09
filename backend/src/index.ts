@@ -28,10 +28,38 @@ app.get(
       const locations = await db.getAllLocations();
       res.json(locations);
     } catch (error) {
+      console.error("Error fetching locations:", error);
       res.status(500).json({ error: "Failed to fetch locations" });
     }
   }
 );
+
+// Endpoint to get location coordinates
+app.get("/api/coordinates", async (req: express.Request, res: express.Response) => {
+  try {
+    const coordinates = await db.getLocationCoordinates();
+    res.json(coordinates);
+  } catch (error) {
+    console.error("Error fetching coordinates:", error);
+    res.status(500).json({ error: "Failed to fetch coordinates" });
+  }
+});
+
+// Endpoint to get location details by ID
+app.get("/api/locations/:id", async (req: express.Request, res: express.Response) => {
+  try {
+    const location = await db.getLocationById(req.params.id);
+    
+    if (!location) {
+      return res.status(404).json({ error: "Location not found" });
+    }
+    
+    res.json(location);
+  } catch (error) {
+    console.error(`Error fetching location ${req.params.id}:`, error);
+    res.status(500).json({ error: "Failed to fetch location" });
+  }
+});
 
 // Endpoint to get payment statistics
 app.get("/api/stats", async (req: express.Request, res: express.Response) => {
@@ -51,6 +79,7 @@ app.get("/api/stats", async (req: express.Request, res: express.Response) => {
       last_updated: new Date().toISOString(),
     });
   } catch (error) {
+    console.error("Error fetching stats:", error);
     res.status(500).json({ error: "Failed to fetch statistics" });
   }
 });
@@ -129,5 +158,5 @@ updateBitcoinLocations();
 
 // Start the server
 app.listen(PORT, HOST, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on http://${HOST}:${PORT}`);
 });

@@ -9,9 +9,48 @@ jest.mock('sqlite3', () => {
       if (callback) callback(null);
     }),
     get: jest.fn((query, params, callback) => {
-      if (callback) callback(null, { count: 10, nodes: 7, ways: 3 });
+      if (callback) {
+        if (query.includes('WHERE id = ?')) {
+          if (params && params[0] === 1) {
+            callback(null, { 
+              id: 1, 
+              type: 'node', 
+              lat: 40.7128, 
+              lon: -74.0060, 
+              tags: JSON.stringify({ name: 'Location 1', amenity: 'cafe' }), 
+              source: 'overpass' 
+            });
+          } else {
+            callback(null, null);
+          }
+        } else {
+          callback(null, { count: 10, nodes: 7, ways: 3 });
+        }
+      }
     }),
-    all: jest.fn(),
+    all: jest.fn((query, params, callback) => {
+      if (callback) {
+        if (query.includes('SELECT id, type, lat, lon FROM locations')) {
+          callback(null, [
+            { id: 1, type: 'node', lat: 40.7128, lon: -74.0060 },
+            { id: 2, type: 'way', lat: 34.0522, lon: -118.2437 }
+          ]);
+        } else if (query.includes('json_extract(tags, \'$.addr:country\')')) {
+          callback(null, [
+            { country: 'USA', count: 5 },
+            { country: 'Germany', count: 3 },
+            { country: 'Japan', count: 2 }
+          ]);
+        } else if (query.includes('COUNT(*) as count')) {
+          callback(null, [{ total_locations: 10, nodes: 7, ways: 3 }]);
+        } else {
+          callback(null, [
+            { id: 1, type: 'node', lat: 40.7128, lon: -74.0060, tags: '{"payment:bitcoin":"yes"}', source: 'overpass' },
+            { id: 2, type: 'way', lat: 34.0522, lon: -118.2437, tags: '{"payment:bitcoin":"yes"}', source: 'btcmap' }
+          ]);
+        }
+      }
+    }),
     serialize: jest.fn((callback) => {
       callback();
     }),
@@ -73,6 +112,80 @@ describe('DatabaseService', () => {
       jest.spyOn(dbService, 'getAllLocations').mockRejectedValue(new Error('Database error'));
       
       await expect(dbService.getAllLocations()).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('getLocationCoordinates', () => {
+    it('should return only coordinates of all locations', async () => {
+      // Mock implementation to avoid timeout
+      jest.spyOn(dbService, 'getLocationCoordinates').mockResolvedValue([
+        { id: 1, type: 'node', lat: 40.7128, lon: -74.0060 },
+        { id: 2, type: 'way', lat: 34.0522, lon: -118.2437 }
+      ]);
+      
+      const coordinates = await dbService.getLocationCoordinates();
+      
+      expect(coordinates).toHaveLength(2);
+      expect(coordinates[0]).toHaveProperty('id', 1);
+      expect(coordinates[0]).toHaveProperty('type', 'node');
+      expect(coordinates[0]).toHaveProperty('lat', 40.7128);
+      expect(coordinates[0]).toHaveProperty('lon', -74.0060);
+      expect(coordinates[0]).not.toHaveProperty('tags');
+      expect(coordinates[0]).not.toHaveProperty('source');
+      
+      expect(coordinates[1]).toHaveProperty('id', 2);
+      expect(coordinates[1]).toHaveProperty('type', 'way');
+      expect(coordinates[1]).toHaveProperty('lat', 34.0522);
+      expect(coordinates[1]).toHaveProperty('lon', -118.2437);
+      expect(coordinates[1]).not.toHaveProperty('tags');
+      expect(coordinates[1]).not.toHaveProperty('source');
+    });
+
+    it('should handle database errors when getting coordinates', async () => {
+      // Mock implementation to throw error
+      jest.spyOn(dbService, 'getLocationCoordinates').mockRejectedValue(new Error('Database error'));
+      
+      await expect(dbService.getLocationCoordinates()).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('getLocationById', () => {
+    it('should return a location by its id', async () => {
+      // Mock implementation to avoid timeout
+      jest.spyOn(dbService, 'getLocationById').mockResolvedValue({
+        id: 1,
+        type: 'node',
+        lat: 40.7128,
+        lon: -74.0060,
+        tags: { name: 'Location 1', amenity: 'cafe' },
+        source: 'overpass'
+      });
+      
+      const location = await dbService.getLocationById('1');
+      
+      expect(location).toHaveProperty('id', 1);
+      expect(location).toHaveProperty('type', 'node');
+      expect(location).toHaveProperty('lat', 40.7128);
+      expect(location).toHaveProperty('lon', -74.0060);
+      expect(location).toHaveProperty('tags');
+      expect(location.tags).toEqual({ name: 'Location 1', amenity: 'cafe' });
+      expect(location).toHaveProperty('source', 'overpass');
+    });
+
+    it('should return null for non-existent location id', async () => {
+      // Mock implementation to return null
+      jest.spyOn(dbService, 'getLocationById').mockResolvedValue(null);
+      
+      const location = await dbService.getLocationById('999');
+      
+      expect(location).toBeNull();
+    });
+
+    it('should handle database errors when getting location by id', async () => {
+      // Mock implementation to throw error
+      jest.spyOn(dbService, 'getLocationById').mockRejectedValue(new Error('Database error'));
+      
+      await expect(dbService.getLocationById('1')).rejects.toThrow('Database error');
     });
   });
 
