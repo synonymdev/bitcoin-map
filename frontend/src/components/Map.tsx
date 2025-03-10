@@ -530,6 +530,10 @@ function getIconByPaymentMethods(tags: Record<string, string>) {
 function LocationButton() {
   const map = useMap();
   const [loading, setLoading] = useState(false);
+  // Adicionar useEffect para chamar addCustomStyles (Adicionar estilos personalizados)
+  useEffect(() => {
+    addCustomStyles();
+  }, []);
 
   const handleGetLocation = () => {
     setLoading(true);
@@ -613,7 +617,7 @@ function LocationButton() {
           }}
         >
           {loading ? (
-            <div className="spinner" style={{ width: "22px", height: "22px", borderRadius: "50%", border: "2px solid #6272a4", borderTopColor: "transparent", animation: "spin 1s linear infinite" }} />
+            <div className="spinner animate-spin" style={{ width: "22px", height: "22px", borderRadius: "50%", border: "2px solid #6272a4", borderTopColor: "transparent" }} />
           ) : (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
@@ -813,6 +817,10 @@ const addCustomStyles = () => {
       @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
+      }
+      
+      .animate-spin {
+        animation: spin 1s linear infinite;
       }
       
       .location-button:hover {
