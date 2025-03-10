@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches: [ '*' ]  # Run on PRs from any branch
 
 jobs:
   test-backend:
