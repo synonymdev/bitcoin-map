@@ -168,7 +168,7 @@ describe('DatabaseService', () => {
       expect(location).toHaveProperty('lat', 40.7128);
       expect(location).toHaveProperty('lon', -74.0060);
       expect(location).toHaveProperty('tags');
-      expect(location.tags).toEqual({ name: 'Location 1', amenity: 'cafe' });
+      expect(location?.tags).toEqual({ name: 'Location 1', amenity: 'cafe' });
       expect(location).toHaveProperty('source', 'overpass');
     });
 

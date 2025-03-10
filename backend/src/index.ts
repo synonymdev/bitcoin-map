@@ -46,7 +46,7 @@ app.get("/api/coordinates", async (req: express.Request, res: express.Response) 
 });
 
 // Endpoint to get location details by ID
-app.get("/api/locations/:id", async (req: express.Request, res: express.Response) => {
+app.get("/api/locations/:id", async (req: any, res: any) => {
   try {
     const location = await db.getLocationById(req.params.id);
     
