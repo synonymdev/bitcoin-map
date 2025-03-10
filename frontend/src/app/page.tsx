@@ -50,16 +50,25 @@ const addCustomAnimationStyles = () => {
 };
 
 // Reusable loading placeholder component
-const LoadingPlaceholder = ({ message = "Loading..." }) => {
+const LoadingPlaceholder = ({ 
+  message = "Loading...", 
+  fullScreen = false 
+}) => {
   useEffect(() => {
     addCustomAnimationStyles();
   }, []);
 
+  const containerClasses = fullScreen 
+    ? "flex flex-col items-center justify-center h-screen bg-[#282a36]" 
+    : "w-full h-full flex flex-col items-center justify-center bg-[#282a36]";
+
+  const marginTopClass = fullScreen ? "-mt-[100px]" : "";
+
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[#282a36]">
-      <div className="relative w-[120px] h-[120px] flex items-center justify-center -mt-[100px]">
+    <div className={containerClasses}>
+      <div className={`relative w-[120px] h-[120px] flex items-center justify-center ${marginTopClass}`}>
         {/* Bitcoin logo spinner */}
-        <div className="animate-spin transition-all duration-300">
+        <div className="transition-all duration-300">
           <FaBitcoin className="w-[82px] h-[82px] text-[#f7931a]" />
         </div>
         
@@ -70,12 +79,12 @@ const LoadingPlaceholder = ({ message = "Loading..." }) => {
       </div>
 
       {/* Loading text */}
-      <div className="mt-[10px] text-center">
-        <div className="text-3xl font-bold text-[#f8f8f2] tracking-tight">
+      <div className="mt-[10px] text-center h-[80px] flex flex-col items-center justify-center">
+        <div className="text-xl font-bold text-[#f8f8f2] tracking-tight">
           {message}
         </div>
-        <div className="text-lg text-[#6272a4] flex items-center justify-center gap-2 mt-2">
-          <div className="w-3 h-3 rounded-full bg-[#bd93f9] animate-pulse"></div>
+        <div className="text-sm text-[#6272a4] flex items-center justify-center gap-2 mt-2">
+          <div className="w-2 h-2 rounded-full bg-[#bd93f9] animate-pulse"></div>
           Preparing your experience
         </div>
       </div>
@@ -86,7 +95,6 @@ const LoadingPlaceholder = ({ message = "Loading..." }) => {
 // Import Map component dynamically to avoid SSR issues with Leaflet
 const Map = dynamic(() => import("../components/Map"), {
   ssr: false,
-  loading: () => <LoadingPlaceholder message="Loading map component..." />,
 });
 
 // NumberFlow component with custom styling
@@ -200,6 +208,11 @@ export default function Home() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
 
+  // Adicionar estilos de animação quando o componente montar
+  useEffect(() => {
+    addCustomAnimationStyles();
+  }, []);
+
   // Memoized fetch function to prevent unnecessary recreations
   const loadData = useCallback(async (isRefreshRequest = false) => {
     try {
@@ -278,10 +291,6 @@ export default function Home() {
     loadData(true);
   }, [loadData, isRefreshing]);
 
-  if (loading && !isRefreshing) {
-    return <LoadingPlaceholder message="Loading Bitcoin Map..." />;
-  }
-
   if (error) {
     return (
       <div className="flex items-center justify-center h-screen bg-[#282a36]">
@@ -332,85 +341,93 @@ export default function Home() {
             </div>
 
             {/* Stats Section */}
-            {stats && (
-              <div className="flex items-center gap-4">
-                {/* Total Locations */}
-                <div className="flex items-center p-[20px] group">
-                  <div className="flex flex-col items-start">
-                    <div className="text-[11px] uppercase tracking-wider font-medium text-[#6272a4] mb-[3px]">
-                      Total Merchants
-                    </div>
-                    <AnimatedNumber 
-                      value={stats.total_locations} 
-                      isLoading={isLoadingStats}
-                    />
+            <div className="flex items-center gap-4">
+              {/* Total Locations */}
+              <div className="flex items-center p-[20px] group">
+                <div className="flex flex-col items-start">
+                  <div className="text-[11px] uppercase tracking-wider font-medium text-[#6272a4] mb-[3px]">
+                    Total Merchants
                   </div>
+                  <AnimatedNumber 
+                    value={stats?.total_locations || 0} 
+                    isLoading={isLoadingStats || loading}
+                  />
                 </div>
+              </div>
 
-                {/* Physical Stores */}
-                <div className="flex items-center p-[20px] group">
-                  <div className="flex flex-col items-start">
-                    <div className="text-[11px] uppercase tracking-wider font-medium text-[#6272a4] mb-[3px]">
-                      Physical Stores
-                    </div>
-                    <AnimatedNumber 
-                      value={stats.location_types.physical_locations} 
-                      className="text-lg font-bold text-white tabular-nums"
-                      isLoading={isLoadingStats}
-                    />
+              {/* Physical Stores */}
+              <div className="flex items-center p-[20px] group">
+                <div className="flex flex-col items-start">
+                  <div className="text-[11px] uppercase tracking-wider font-medium text-[#6272a4] mb-[3px]">
+                    Physical Stores
                   </div>
+                  <AnimatedNumber 
+                    value={stats?.location_types?.physical_locations || 0} 
+                    isLoading={isLoadingStats || loading}
+                  />
                 </div>
+              </div>
 
-                {/* Areas & Buildings */}
-                <div className="flex items-center p-[20px] group">
-                  <div className="flex flex-col items-start">
-                    <div className="text-[11px] uppercase tracking-wider font-medium text-[#6272a4] mb-[3px]">
-                      Areas & Buildings
-                    </div>
-                    <AnimatedNumber 
-                      value={stats.location_types.areas_or_buildings} 
-                      className="text-lg font-bold text-white tabular-nums"
-                      isLoading={isLoadingStats}
-                    />
+              {/* Countries */}
+              <div className="flex items-center p-[20px] group">
+                <div className="flex flex-col items-start">
+                  <div className="text-[11px] uppercase tracking-wider font-medium text-[#6272a4] mb-[3px]">
+                    Countries
                   </div>
+                  <AnimatedNumber 
+                    value={stats?.countries?.total_countries || 0} 
+                    isLoading={isLoadingStats || loading}
+                  />
                 </div>
+              </div>
 
-                {/* Refresh Button & Last Updated */}
-                <div className="flex items-center gap-3 ml-[5px]">
+              {/* Last Updated */}
+              <div className="flex items-center p-[20px] group relative">
+                <div className="flex flex-col items-start">
                   <button
                     onClick={handleRefresh}
-                    disabled={isRefreshing}
+                    disabled={isRefreshing || loading}
                     className="flex items-center justify-center w-8 h-8 bg-transparent border-none cursor-pointer group"
                     aria-label="Refresh data"
                   >
                     <div className="flex text-[#6272a4] group-hover:text-[#8be9fd] transition-colors text-[11px]">
-                      Updated <br />
-                      {/* show date in format 12:00 AM */}
-                      {new Date(stats.last_updated).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                        hour12: true,
-                      })}{" "}
+                      {stats ? (
+                        <>
+                          Updated <br />
+                          {/* show date in format 12:00 AM */}
+                          {new Date(stats.last_updated).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            second: "2-digit",
+                            hour12: true,
+                          })}{" "}
+                        </>
+                      ) : (
+                        "Loading..."
+                      )}
                     </div>
                     <div className="mt-[10px] absolute right-0 top-0 z-10 ml-[100px]">
-                      {isRefreshing && (
+                      {(isRefreshing || loading) && (
                         <FaSpinner className="text-[#6272a4] animate-spin" />
                       )}
                     </div>
                   </button>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
 
       {/* Map Container */}
       <div className="flex-1 relative z-0">
-        <Suspense fallback={<LoadingPlaceholder message="Loading map..." />}>
-          <Map coordinates={coordinates} />
-        </Suspense>
+        {loading ? (
+          <LoadingPlaceholder message="Loading map..." fullScreen={false} />
+        ) : (
+          <Suspense>
+            <Map coordinates={coordinates} />
+          </Suspense>
+        )}
       </div>
     </div>
   );
