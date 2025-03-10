@@ -97,6 +97,11 @@ These APIs are used to synchronize and maintain our database of Bitcoin-acceptin
 - [x] Bitcoin location markers on the map
 - [x] Responsive design
 - [x] Location details popup
+- [x] Improved popup UI with better styling and organization
+- [x] Custom animations for loading states
+- [x] User location button for centering map on user's position
+- [x] Optimized data loading (coordinates first, details on demand)
+- [x] Number animations for statistics
 - [ ] Name-based search interface
 - [ ] Proximity search UI with radius selector
 - [ ] Country leaderboard UI
@@ -111,11 +116,20 @@ These APIs are used to synchronize and maintain our database of Bitcoin-acceptin
 - [x] Data synchronization system
 - [x] CORS configuration for frontend access
 - [x] Basic error handling
+- [x] Optimized API endpoints (coordinates-only and location details)
+- [x] Comprehensive test suite with Jest
+- [x] GitHub Actions workflows for testing and coverage
 - [ ] Name-based search API endpoint
 - [ ] Proximity search implementation using latitude and longitude
 - [ ] Country ranking data aggregation
 - [ ] API rate limiting implementation
 - [ ] API documentation
+
+### 🔧 DevOps
+
+- [x] Docker and Docker Compose setup
+- [x] GitHub Actions workflows for testing
+- [x] Test coverage reporting
 
 ## 👥 Contributing
 
