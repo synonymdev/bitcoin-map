@@ -65,11 +65,22 @@ For more details about the testing approach and structure, see the [tests README
 
 ## 🔌 API Routes
 
-| Method | Route            | Description                                                                                            |
-| ------ | ---------------- | ------------------------------------------------------------------------------------------------------ |
-| GET    | `/health`        | Health check endpoint                                                                                  |
-| GET    | `/api/locations` | Get all Bitcoin-accepting locations                                                                    |
-| GET    | `/api/stats`     | Get statistics about Bitcoin locations including total count, location types, and country distribution |
+| Method | Route               | Description                                                                                            |
+| ------ | ------------------- | ------------------------------------------------------------------------------------------------------ |
+| GET    | `/health`           | Health check endpoint                                                                                  |
+| GET    | `/api/locations`    | Get all Bitcoin-accepting locations with complete details                                              |
+| GET    | `/api/coordinates`  | Get only coordinates of all Bitcoin-accepting locations (optimized for initial map loading)            |
+| GET    | `/api/locations/:id`| Get complete details of a specific Bitcoin-accepting location by ID                                    |
+| GET    | `/api/stats`        | Get statistics about Bitcoin locations including total count, location types, and country distribution |
+
+## 🚀 Performance Optimizations
+
+The API has been optimized for better performance and user experience:
+
+- **Coordinates-Only Endpoint**: The `/api/coordinates` endpoint returns only essential location data (id, type, lat, lon), reducing payload size by up to 90% compared to full location details.
+- **On-Demand Location Details**: The `/api/locations/:id` endpoint allows fetching complete details only when needed (e.g., when a user clicks on a map marker).
+- **Efficient Data Loading**: This two-step approach significantly improves initial map loading time, especially on slower connections or mobile devices.
+- **Reduced Bandwidth Usage**: By loading only necessary data, the application uses less bandwidth and is more responsive.
 
 ## 🔄 External API Integration
 
