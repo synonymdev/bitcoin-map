@@ -6,35 +6,72 @@ import { fetchCoordinates, fetchStats, forceRefresh } from "../services/api";
 import { LocationCoordinate, LocationStats } from "../types/location";
 import {
   FaBitcoin,
-  FaBuilding,
   FaExclamationTriangle,
-  FaShoppingBag,
   FaSpinner,
-  FaStore,
 } from "react-icons/fa";
 import NumberFlow from "@number-flow/react";
 
-// Reusable loading placeholder component
-const LoadingPlaceholder = ({ message = "Loading..." }) => (
-  <div className="flex flex-col items-center justify-center h-screen bg-[#282a36]">
-    <div className="relative w-[120px] h-[120px] flex items-center justify-center -mt-[100px]">
-      <div className="animate-spin transition-all duration-300">
-        <FaBitcoin className="w-[78px] h-[78px] text-[#f7931a] animate-spin" />
-      </div>
-    </div>
+// Add custom styles for animation delays
+const addCustomAnimationStyles = () => {
+  if (typeof document !== 'undefined' && !document.getElementById('animation-styles')) {
+    const style = document.createElement('style');
+    style.id = 'animation-styles';
+    style.innerHTML = `
+      .delay-150 {
+        animation-delay: 0.3s;
+      }
+      .delay-300 {
+        animation-delay: 0.6s;
+      }
+      @keyframes spin-reverse {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(-360deg);
+        }
+      }
+      .animate-spin-reverse {
+        animation: spin-reverse 3s linear infinite;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+};
 
-    {/* Loading text */}
-    <div className="mt-16 text-center">
-      <div className="text-3xl font-bold text-[#f8f8f2] tracking-tight">
-        {message}
+// Reusable loading placeholder component
+const LoadingPlaceholder = ({ message = "Loading..." }) => {
+  useEffect(() => {
+    addCustomAnimationStyles();
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-[#282a36]">
+      <div className="relative w-[120px] h-[120px] flex items-center justify-center -mt-[100px]">
+        {/* Bitcoin logo spinner */}
+        <div className="animate-spin transition-all duration-300">
+          <FaBitcoin className="w-[82px] h-[82px] text-[#f7931a]" />
+        </div>
+        
+        {/* Circular spinner around Bitcoin logo */}
+        <div className="absolute inset-0 w-full h-full">
+          <div className="ml-[10px] mt-[10px] w-[90px] h-[90px] rounded-full border-4 border-transparent border-t-[#f7931a] border-r-[#f7931a]/30 animate-spin-reverse"></div>
+        </div>
       </div>
-      <div className="text-lg text-[#6272a4] flex items-center justify-center gap-2">
-        <div className="w-3 h-3 rounded-full bg-[#bd93f9] animate-pulse"></div>
-        Preparing your experience
+
+      {/* Loading text */}
+      <div className="mt-[10px] text-center">
+        <div className="text-3xl font-bold text-[#f8f8f2] tracking-tight">
+          {message}
+        </div>
+        <div className="text-lg text-[#6272a4] flex items-center justify-center gap-2 mt-2">
+          <div className="w-3 h-3 rounded-full bg-[#bd93f9] animate-pulse"></div>
+          Preparing your experience
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Import Map component dynamically to avoid SSR issues with Leaflet
 const Map = dynamic(() => import("../components/Map"), {
