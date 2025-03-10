@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, Suspense } from "react";
+import React, { useEffect, useState, useCallback, Suspense, useRef } from "react";
 import dynamic from "next/dynamic";
 import { fetchCoordinates, fetchStats, forceRefresh } from "../services/api";
 import { LocationCoordinate, LocationStats } from "../types/location";
@@ -9,7 +9,6 @@ import {
   FaExclamationTriangle,
   FaSpinner,
 } from "react-icons/fa";
-import NumberFlow from "@number-flow/react";
 
 // Add custom styles for animation delays
 const addCustomAnimationStyles = () => {
@@ -88,11 +87,11 @@ interface AnimatedNumberProps {
 
 // Loading spinner component
 const LoadingSpinner = ({ className }: { className?: string }) => (
-  <div className={`${className || ""} flex items-center justify-center h-full w-full`}>
-    <div className="flex items-left space-x-2 mt-[5px] -ml-[20px] h-[20px] min-w-[80px]">
-      <div className="h-[10px] w-[10px] bg-[#f3b467] rounded-full animate-pulse"></div>
-      <div className="h-[10px] w-[10px] bg-[#f3b467] rounded-full animate-pulse delay-75"></div>
-      <div className="h-[10px] w-[10px] bg-[#f3b467] rounded-full animate-pulse delay-150"></div>
+  <div className={`${className || ""} flex items-left justify-start h-full w-full`}>
+    <div className="flex items-left space-x-1 h-[20px]">
+      <div className="h-[8px] w-[8px] bg-[#f7931a] rounded-full animate-pulse"></div>
+      <div className="h-[8px] w-[8px] bg-[#f7931a] rounded-full animate-pulse delay-75"></div>
+      <div className="h-[8px] w-[8px] bg-[#f7931a] rounded-full animate-pulse delay-150"></div>
     </div>
   </div>
 );
@@ -102,17 +101,53 @@ const AnimatedNumber = ({
   className = "text-xl font-bold text-[#f8f8f2] tabular-nums tracking-tight",
   isLoading
 }: AnimatedNumberProps) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  const previousValueRef = useRef(0);
+  
+  useEffect(() => {
+    if (isLoading) return;
+    
+    // Store the previous value
+    const previousValue = previousValueRef.current;
+    
+    // Set the target value
+    const targetValue = value;
+    
+    // Calculate the step size based on the difference
+    const diff = targetValue - previousValue;
+    const steps = 30; // Number of steps for the animation
+    const stepValue = diff / steps;
+    
+    // Start from the previous value
+    let currentValue = previousValue;
+    let step = 0;
+    
+    // Animate the number
+    const interval = setInterval(() => {
+      step++;
+      currentValue += stepValue;
+      
+      // Ensure we reach exactly the target value at the end
+      if (step >= steps) {
+        clearInterval(interval);
+        currentValue = targetValue;
+        previousValueRef.current = targetValue;
+      }
+      
+      setDisplayValue(Math.round(currentValue));
+    }, 20); // 20ms interval for smooth animation
+    
+    return () => clearInterval(interval);
+  }, [value, isLoading]);
+  
   if (isLoading) {
     return <LoadingSpinner className={className} />;
   }
   
   return (
-    <NumberFlow
-      value={value}
-      format={{ useGrouping: true }}
-      className={className}
-      transformTiming={{ duration: 1500, easing: 'ease-out' }}
-    />
+    <div className={`${className} transition-all duration-300`}>
+      {displayValue.toLocaleString()}
+    </div>
   );
 };
 
