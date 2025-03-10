@@ -109,6 +109,7 @@ function MarkerLayer({ coordinates }: MarkerLayerProps) {
   const map = useMap();
   const [locationDetails, setLocationDetails] = useState<Record<number, BitcoinLocation>>({});
   const markersRef = useRef<L.MarkerClusterGroup | null>(null);
+  const popupRefs = useRef<Record<number, L.Popup | null>>({});
 
   useEffect(() => {
     if (!coordinates.length) return;
@@ -142,6 +143,9 @@ function MarkerLayer({ coordinates }: MarkerLayerProps) {
 
       marker.on('click', async () => {
         try {
+          // Show loading popup immediately
+          showLoadingPopup(marker, location);
+          
           // Check if we already have the details for this location
           if (!locationDetails[location.id]) {
             const details = await fetchLocationById(location.id);
@@ -358,6 +362,38 @@ function MarkerLayer({ coordinates }: MarkerLayerProps) {
         .popup-content .section.no-border {
           border-bottom: none;
         }
+        
+        /* Loading spinner styles */
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        
+        .loading-spinner {
+          display: inline-block;
+          width: 40px;
+          height: 40px;
+          border: 4px solid rgba(247, 147, 26, 0.3);
+          border-radius: 50%;
+          border-top-color: #F7931A;
+          animation: spin 1s ease-in-out infinite;
+          margin: 20px auto;
+        }
+        
+        .loading-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          text-align: center;
+        }
+        
+        .loading-text {
+          margin-top: 12px;
+          color: #f8f8f2;
+          font-size: 14px;
+        }
       `;
       document.head.appendChild(style);
     }
@@ -369,6 +405,18 @@ function MarkerLayer({ coordinates }: MarkerLayerProps) {
       }
     };
   }, [map, coordinates]); // Remove locationDetails from dependencies to prevent re-renders
+
+  // Show loading popup
+  const showLoadingPopup = (marker: L.Marker, location: LocationCoordinate) => {
+    marker.bindPopup(`
+      <div class="popup-content loading-container">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading details...</div>
+      </div>
+    `, {
+      maxWidth: 320
+    }).openPopup();
+  };
 
   const createPopup = (marker: L.Marker, location: BitcoinLocation) => {
     // Check payment methods
@@ -532,7 +580,7 @@ function LocationButton() {
   const map = useMap();
   const [loading, setLoading] = useState(false);
   
-  // Adicionar useEffect para chamar addCustomStyles
+  // Add useEffect to call addCustomStyles
   useEffect(() => {
     addCustomStyles();
   }, []);
@@ -602,8 +650,8 @@ function LocationButton() {
         <button
           onClick={handleGetLocation}
           disabled={loading}
-          title={loading ? "Localizando..." : "Zoom to my location"}
-          aria-label={loading ? "Localizando..." : "Zoom to my location"}
+          title={loading ? "Locating..." : "Zoom to my location"}
+          aria-label={loading ? "Locating..." : "Zoom to my location"}
           className="location-button"
           style={{
             width: "50px",
