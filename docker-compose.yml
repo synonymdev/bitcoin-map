@@ -11,7 +11,7 @@ services:
       - PORT=3001
       - NODE_ENV=production
     volumes:
-      - ./backend/bitcoin_locations.db:/app/bitcoin_locations.db
+      - ./backend/data/bitcoin_locations.db:/app/data/bitcoin_locations.db
     restart: unless-stopped
 
   frontend:
