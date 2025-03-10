@@ -9,6 +9,7 @@ import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import { BitcoinLocation, LocationCoordinate } from "../types/location";
 import { fetchLocationById } from "../services/api";
+import { FaSpinner } from "react-icons/fa";
 
 // Extend Leaflet types to include markerClusterGroup
 declare module "leaflet" {
@@ -530,7 +531,8 @@ function getIconByPaymentMethods(tags: Record<string, string>) {
 function LocationButton() {
   const map = useMap();
   const [loading, setLoading] = useState(false);
-  // Adicionar useEffect para chamar addCustomStyles (Adicionar estilos personalizados)
+  
+  // Adicionar useEffect para chamar addCustomStyles
   useEffect(() => {
     addCustomStyles();
   }, []);
@@ -546,7 +548,8 @@ function LocationButton() {
           // Fly to user location without adding a marker
           map.flyTo([latitude, longitude], 12, {
             animate: true,
-            duration: 1.5
+            duration: 4.0,
+            easeLinearity: 0.1
           });
           
           setLoading(false);
@@ -599,8 +602,8 @@ function LocationButton() {
         <button
           onClick={handleGetLocation}
           disabled={loading}
-          title="Zoom to my location"
-          aria-label="Zoom to my location"
+          title={loading ? "Localizando..." : "Zoom to my location"}
+          aria-label={loading ? "Localizando..." : "Zoom to my location"}
           className="location-button"
           style={{
             width: "50px",
@@ -617,7 +620,28 @@ function LocationButton() {
           }}
         >
           {loading ? (
-            <div className="spinner animate-spin" style={{ width: "22px", height: "22px", borderRadius: "50%", border: "2px solid #6272a4", borderTopColor: "transparent" }} />
+            <svg 
+              width="20" 
+              height="20" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+              style={{
+                animation: "spin 1.5s linear infinite",
+                transformOrigin: "center"
+              }}
+            >
+              <style>
+                {`
+                  @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                  }
+                `}
+              </style>
+              <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z" fill="#f8f8f2" opacity="0.3"/>
+              <path d="M12 2V4C16.41 4 20 7.59 20 12H22C22 6.48 17.52 2 12 2Z" fill="#f8f8f2"/>
+            </svg>
           ) : (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" />
@@ -814,15 +838,6 @@ const addCustomStyles = () => {
       }
       
       /* Location button styles */
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      
-      .animate-spin {
-        animation: spin 1s linear infinite;
-      }
-      
       .location-button:hover {
         background-color: #44475a !important;
       }
