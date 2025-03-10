@@ -30,8 +30,19 @@ const addCustomAnimationStyles = () => {
           transform: rotate(-360deg);
         }
       }
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
       .animate-spin-reverse {
         animation: spin-reverse 3s linear infinite;
+      }
+      .animate-spin {
+        animation: spin 1.5s linear infinite;
       }
     `;
     document.head.appendChild(style);
